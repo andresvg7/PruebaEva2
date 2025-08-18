@@ -134,77 +134,41 @@ class CuentaCorriente:
     # ==============================
     # Exportar a CSV
     # ==============================
-    @staticmethod
-    def exportar_csv_ctacte():
-        """Exporta todos los registros de la tabla CtaCte a CSV con nombres personalizados en columnas."""
+    def exportar_csv_ctacte(self):
+        """Exporta todas las cuentas a CSV."""
         con = crear_conexion()
         cursor = con.cursor()
-        query = "SELECT * FROM CtaCte"
-        cursor.execute(query)
-        resultado = cursor.fetchall()
-        print(resultado)
-        print("------------------------------------------")
-        print("")
-        print("*****  A CONTINUACION LAS CUENTAS CORRIENTES   *******")
-        print("")
-
+        cursor.execute("SELECT * FROM CtaCte")
+        cuentas = cursor.fetchall()
         with open('CuentasCorrientes.csv', 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            # Encabezados personalizados
-            writer.writerow([
-                "ID Cta Cte",
-                "Numero Cuenta Corriente",
-                "Rut Titular Cuenta",
-                "Nombre Titular Cuenta",
-                "Saldo Cuenta"
-            ])
-
-            # Recorremos el resultado
-            for ID, numero, rut, nombre, saldo in resultado:
-                print(ID, numero, rut, nombre, saldo)
+            writer.writerow(["ID Cta Cte", "Numero Cta Cte", "Rut Titular", "Nombre Titular", "Saldo"])
+            for ID, numero, rut, nombre, saldo in cuentas:
                 writer.writerow([ID, numero, rut, nombre, saldo])
-
         con.close()
-        print("Exportación de CtaCte completada correctamente.\n")
+        print("Exportación de Cuentas Corrientes completa.")
 
-    @staticmethod
-    def exportar_csv_movimientos():
-        """Exporta todos los registros de la tabla Movimientos a CSV con nombres personalizados."""
+    def exportar_csv_movimientos(self):
+        """Exporta todos los movimientos a CSV."""
         con = crear_conexion()
         cursor = con.cursor()
-        query = "SELECT * FROM Movimientos"
-        cursor.execute(query)
-        resultado = cursor.fetchall()
-        print(resultado)
-        print("------------------------------------------")
-        print("")
-        print("*****  A CONTINUACION LOS MOVIMIENTOS   *******")
-        print("")
-
+        cursor.execute("SELECT IdMovimientos, idCtaCte, tipoMovimiento, Monto FROM Movimientos")
+        movimientos = cursor.fetchall()
         with open('Movimientos.csv', 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            # Encabezados personalizados
-            writer.writerow([
-                "ID Movimiento",
-                "ID Cta Cte",
-                "Tipo Movimiento",
-                "Monto"
-            ])
-
-            # Recorremos el resultado
-            for id_mov, id_cta, tipo, monto in resultado:
-                print(id_mov, id_cta, tipo, monto)
-                writer.writerow([id_mov, id_cta, tipo, monto])
-
+            writer.writerow(["ID Movimiento", "ID Cta Cte", "Tipo Movimiento", "Monto", "Descripcion"])
+            for id_mov, id_cta, tipo, monto in movimientos:
+                descripcion = "Abono" if tipo == 0 else "Cargo"
+                writer.writerow([id_mov, id_cta, tipo, monto, descripcion])
         con.close()
-        print("Exportación de Movimientos completada correctamente.\n")
+        print("Exportación de Movimientos completa.")
 
 # ==============================
 # Ejemplo de uso
 # ==============================
 cuenta1 = CuentaCorriente(10000001, "12345678-9", "Matias Delgado", 150000)
 cuenta2 = CuentaCorriente(10000002, "98765432-1", "Danilo Lopez", 250000)
-cuenta3 = CuentaCorriente(10000003, "11223344-5", "Samira Leiva", 50000)
+cuenta3 = CuentaCorriente(10000003, "11223344-5", "Samira Ortega", 50000)
 
 cuenta3.abonar(20000)
 cuenta1.cargar(5000)
@@ -213,5 +177,5 @@ cuenta1.cargar(999999)  # Error por saldo insuficiente
 cuenta1.abonar(-100)     # Error por monto inválido
 
 # Exportar a CSV
-CuentaCorriente.exportar_csv_ctacte()
-CuentaCorriente.exportar_csv_movimientos()
+cuenta1.exportar_csv_ctacte()
+cuenta1.exportar_csv_movimientos()

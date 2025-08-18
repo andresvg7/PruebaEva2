@@ -1,36 +1,27 @@
 import sqlite3
 import csv
 
-
-# Conexión a la base de datos
-
+# Me conecto a la base de datos
 def crear_conexion():
-    """Crea y retorna una conexión a la base de datos."""
+    """Creo y retorno una conexión a la base de datos."""
     conexion = sqlite3.connect("MovimentosYCtaCte.db")
     return conexion
 
-
-# Creación de tablas
-
+# Creo las tablas
 def crear_tablas():
-    """
-    Crea las tablas 'CtaCte' y 'Movimientos' si no existen.
-    """
+    """Creo las tablas 'CtaCte' y 'Movimientos' si es que no existen."""
     con = crear_conexion()
 
     query1 = """
         CREATE TABLE IF NOT EXISTS CtaCte (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            numero_cta_cte NUMERIC NOT NULL,
+            numero_cta_cte INTEGER NOT NULL,
             rut_titular_cta TEXT NOT NULL,
             nombre_titular_cta TEXT NOT NULL,
-            saldo_cta NUMERIC NOT NULL DEFAULT 0.0
+            saldo_cta NUMERIC NOT NULL DEFAULT 0
         )
     """
 
-    #   tipo_movimiento:
-    #   0 = Abono
-    #   1 = Cargo
     query2 = """
         CREATE TABLE IF NOT EXISTS Movimientos (
             id_movimientos INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,35 +37,23 @@ def crear_tablas():
     cursor.execute(query2)
     con.close()
 
-# Crear tablas al iniciar
+# Llamo metodo para crear las tablas
 crear_tablas()
 
 
-# ==============================
-# Clase CuentaCorriente
-# ==============================
+# Genero la Clase CuentaCorriente que representa una cuenta corriente bancaria.
+
 class CuentaCorriente:
     """
-    Clase que representa una cuenta corriente bancaria.
-
     Atributos:
         numero_cta_cte (int): Número único de la cuenta corriente.
         rut_titular_cta (str): RUT del titular de la cuenta.
         nombre_titular_cta (str): Nombre del titular de la cuenta.
-        saldo_cta (float): Saldo actual de la cuenta.
+        saldo_cta (int): Saldo actual de la cuenta
         id (int): Identificador único de la cuenta en la base de datos.
     """
 
-    def __init__(self, numero_cta_cte, rut_titular_cta, nombre_titular_cta, saldo_inicial=0.0):
-        """
-        Constructor que inicializa una nueva cuenta corriente y la registra en la base de datos.
-
-        Args:
-            numero_cta_cte (int): Número único de la cuenta corriente.
-            rut_titular_cta (str): RUT del titular de la cuenta.
-            nombre_titular_cta (str): Nombre del titular de la cuenta.
-            saldo_inicial (float): Saldo inicial de la cuenta. Por defecto es 0.0.
-        """
+    def __init__(self, numero_cta_cte: int, rut_titular_cta: str, nombre_titular_cta: str, saldo_inicial: int = 0):
         self.numero_cta_cte = numero_cta_cte
         self.rut_titular_cta = rut_titular_cta
         self.nombre_titular_cta = nombre_titular_cta
@@ -82,7 +61,7 @@ class CuentaCorriente:
         self.id = self._registrar_en_bd()
 
     def _registrar_en_bd(self):
-        """Registra la cuenta en la base de datos y retorna su ID (usando lastrowid)."""
+        """Registra la cuenta en la base de datos y retorna su ID."""
         con = crear_conexion()
         query = f"""
             INSERT INTO CtaCte (numero_cta_cte, rut_titular_cta, nombre_titular_cta, saldo_cta)
@@ -91,58 +70,35 @@ class CuentaCorriente:
         cursor = con.cursor()
         cursor.execute(query)
         con.commit()
-
-        # Obtener directamente el ID recién insertado
         id_cuenta = cursor.lastrowid
-
         con.close()
         return id_cuenta
 
 
-    # ==============================
     # Operaciones
-    # ==============================
-    def abonar(self, monto):
-        """
-        Abona un monto positivo a la cuenta.
 
-        Args:
-            monto (float): Monto a abonar.
-
-        Returns:
-            None
-        """
+    def abonar(self, monto: int):
         if monto <= 0:
             print("Error: El monto debe ser mayor a 0.")
             return
         self.saldo_cta += monto
         self._actualizar_saldo_bd()
         self._registrar_movimiento(monto, 0)
-        print(f"Abono exitoso: ${monto:.2f} abonados a la cuenta {self.numero_cta_cte}. Saldo actual: ${self.saldo_cta:.2f}.")
+        print(f"Abono exitoso: ${monto} abonados a la cuenta {self.numero_cta_cte}. Saldo actual: ${self.saldo_cta}.")
 
-    def cargar(self, monto):
-        """
-        Carga un monto positivo a la cuenta, verificando saldo suficiente.
-
-        Args:
-            monto (float): Monto a cargar.
-
-        Returns:
-            None
-        """
+    def cargar(self, monto: int):
         if monto <= 0:
             print("Error: El monto debe ser mayor a 0.")
             return
         if self.saldo_cta < monto:
-            print(f"Error: Saldo insuficiente. Saldo actual: ${self.saldo_cta:.2f}.")
+            print(f"Error: Saldo insuficiente. Saldo actual: ${self.saldo_cta}.")
             return
         self.saldo_cta -= monto
         self._actualizar_saldo_bd()
         self._registrar_movimiento(monto, 1)
-        print(f"Carga exitosa: ${monto:.2f} cargados de la cuenta {self.numero_cta_cte}. Saldo actual: ${self.saldo_cta:.2f}.")
+        print(f"Carga exitosa: ${monto} cargados de la cuenta {self.numero_cta_cte}. Saldo actual: ${self.saldo_cta}.")
 
     def _actualizar_saldo_bd(self):
-        """Actualiza el saldo de la cuenta en la base de datos."""
         con = crear_conexion()
         query = f"UPDATE CtaCte SET saldo_cta={self.saldo_cta} WHERE ID={self.id}"
         cursor = con.cursor()
@@ -150,14 +106,7 @@ class CuentaCorriente:
         con.commit()
         con.close()
 
-    def _registrar_movimiento(self, monto, tipo):
-        """
-        Registra un movimiento en la base de datos.
-
-        Args:
-            monto (float): Monto del movimiento.
-            tipo (int): 0 = Abono, 1 = Carga.
-        """
+    def _registrar_movimiento(self, monto: int, tipo: int):
         con = crear_conexion()
         query = f"""
             INSERT INTO Movimientos (id_cta_cte, tipo_movimiento, monto)
@@ -168,11 +117,10 @@ class CuentaCorriente:
         con.commit()
         con.close()
 
-    # ==============================
+
     # Exportar a CSV
-    # ==============================
+
     def exportar_csv_ctacte(self):
-        """Exporta todas las cuentas a un archivo CSV."""
         con = crear_conexion()
         cursor = con.cursor()
         cursor.execute("SELECT * FROM CtaCte")
@@ -186,10 +134,9 @@ class CuentaCorriente:
         print("Exportación de Cuentas Corrientes completa.")
 
     def exportar_csv_movimientos(self):
-        """Exporta todos los movimientos a un archivo CSV."""
         con = crear_conexion()
         cursor = con.cursor()
-        cursor.execute("SELECT id_movimientos, id_cta_cte, tipo_movimiento, monto FROM Movimientos")
+        cursor.execute("SELECT * FROM Movimientos")
         movimientos = cursor.fetchall()
         with open('Movimientos.csv', 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
@@ -200,9 +147,10 @@ class CuentaCorriente:
         con.close()
         print("Exportación de Movimientos completa.")
 
-# ==============================
-# Ejemplo de uso
-# ==============================
+
+
+# Ejemplos de uso
+
 cuenta1 = CuentaCorriente(10000001, "12345678-9", "Matias Delgado", 150000)
 cuenta2 = CuentaCorriente(10000002, "98765432-1", "Danilo Lopez", 250000)
 cuenta3 = CuentaCorriente(10000003, "11223344-5", "Samira Ortega", 50000)
